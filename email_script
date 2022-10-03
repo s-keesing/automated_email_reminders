@@ -1,0 +1,73 @@
+import requests 
+import smtplib
+from datetime import date
+
+def automatedEmail(name, gmail, password, api_spreadsheet):
+
+    your_name = name
+    your_email = gmail
+    your_password = password
+    today = date.today()
+    d1 = today.strftime("%d/%m/%Y")
+
+    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+    server.ehlo()
+    server.login(your_email, your_password)
+
+    
+    r = requests.get(api_spreadsheet)
+
+    if r.status_code == 200:
+	    data = r.json()["data"]
+	    print("SUCCESS")
+    else:
+	    data=None
+	    print("ERROR")
+  
+    for idx in range(len(data)):
+
+        if(d1 == data[idx]["Date"]):
+            subject = 'ADMX Shift'
+            monitor_name = data[idx]["Monitoring"]
+            monitor_email = data[idx]["Monitoring Email"]
+            monitor_message = 'Dear collaborator, \nThis is a reminder that you have a Monitoring shift today! Here is the link to the checklist: https://admx.npl.washington.edu/checklist.php. \nSincerely, the Operations Team'
+            walkthrough_name = data[idx]["Walkthrough"]
+            walkthrough_email = data[idx]["Walkthrough Email"]
+            walkthrough_message = 'Dear collaborator, \nThis is a reminder that you have a Walkthrough shift today! Here is the link to the checklist: https://admx.npl.washington.edu/checklist.php. \nSincerely, the Operations Team'
+            remote_name = data[idx]["Remote"]
+            remote_email = data[idx]["Remote Email"]
+            remote_message = 'Dear collaborator, \nThis is a reminder that you have a Remote shift today! Here is the link to the checklist: https://admx.npl.washington.edu/checklist.php. \nSincerely, the Operations Team'
+            
+            full_m_email = ("From: {0} <{1}>\n"
+                      "To: {2} <{3}>\n"
+                      "Subject: {4}\n\n"
+                      "{5}"
+                      .format(your_name, your_email, monitor_name, monitor_email, subject, monitor_message))
+            full_w_email = ("From: {0} <{1}>\n"
+                      "To: {2} <{3}>\n"
+                      "Subject: {4}\n\n"
+                      "{5}"
+                      .format(your_name, your_email, walkthrough_name, walkthrough_email, subject, walkthrough_message))
+            full_r_email = ("From: {0} <{1}>\n"
+                      "To: {2} <{3}>\n"
+                      "Subject: {4}\n\n"
+                      "{5}"
+                      .format(your_name, your_email, remote_name, remote_email, subject, remote_message))
+            try:
+                server.sendmail(your_email, [monitor_email], full_m_email)
+                print('Email to {} successfully sent!\n\n'.format(monitor_email))
+            except Exception as e:
+                print('Email to {} could not be sent because {}\n\n'.format(monitor_email, str(e)))
+            try: 
+                server.sendmail(your_email, [walkthrough_email], full_w_email)
+                print('Email to {} successfully sent!\n\n'.format(walkthrough_email))
+            except Exception as e:
+                print('Email to {} could not be sent because {}\n\n'.format(walkthrough_email, str(e)))
+            try:
+                server.sendmail(your_email, [remote_email], full_r_email)
+                print('Email to {} successfully sent!\n\n'.format(remote_email))
+            except Exception as e:
+                print('Email to {} could not be sent because {}\n\n'.format(remote_email, str(e)))
+
+    server.close()
+automatedEmail('Senna Keesing', 'admx.shift.manager@gmail.com', 'aihftfmaldgvxapq', 'https://api.apispreadsheets.com/data/h5OPwaKd0BeRo2Sj/')
